@@ -1,33 +1,35 @@
 import discord
-import os
-from discord.ext import commands
-from threading import Thread
+from discord import app_commands
 from flask import Flask
+from threading import Thread
+import os
 
-# Servidor web fake para que Render no mate el bot
+TOKEN = os.getenv('DISCORD_TOKEN')
+
+intents = discord.Intents.default()
+client = discord.Client(intents=intents)
+tree = app_commands.CommandTree(client)
+
 app = Flask('')
 
 @app.route('/')
 def home():
-    return "CRAKZY-BOT vivo"
+    return "CRAKZY BOT 24/7 ONLINE"
 
-def run_flask():
-    app.run(host='0.0.0.0', port=10000)
-
-# Bot de Discord
-TOKEN = os.getenv("DISCORD_TOKEN")
-intents = discord.Intents.default()
-intents.message_content = True
-bot = commands.Bot(command_prefix="!", intents=intents)
-
-@bot.event
+@client.event
 async def on_ready():
-    print(f'✅ CRAKZY BOT en línea como {bot.user}')
+    await tree.sync()
+    print(f'✅ CRAKZY BOT en línea como {client.user}')
+
+@tree.command(name="ping", description="Checa el lag")
+async def ping(interaction: discord.Interaction):
+    await interaction.response.send_message(f'Pong! {round(client.latency * 1000)}ms 🍅')
 
 def run_bot():
-    bot.run(TOKEN)
+    client.run(TOKEN)
 
-# Prende Flask y el bot al mismo tiempo
-if __name__ == "__main__":
-    Thread(target=run_flask).start()
-    run_bot()
+def keep_alive():
+    app.run(host='0.0.0.0', port=10000)
+
+Thread(target=keep_alive).start()
+run_bot()
