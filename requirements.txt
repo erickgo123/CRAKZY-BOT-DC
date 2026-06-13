@@ -1,2 +1,6 @@
-   discord.py
-   flask
+discord.py
+python-dotenv
+deep-translator
+requests
+yt-dlp
+PyNaCl
