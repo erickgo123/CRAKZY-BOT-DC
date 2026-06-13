@@ -4,3 +4,4 @@ deep-translator
 requests
 yt-dlp
 PyNaCl
+Flask
