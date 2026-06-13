@@ -7,6 +7,16 @@ import asyncio
 from dotenv import load_dotenv
 from deep_translator import GoogleTranslator
 import yt_dlp
+from flask import Flask
+from threading import Thread
+
+# ==================== KEEP ALIVE PARA RENDER ====================
+app = Flask('')
+@app.route('/')
+def home():
+    return "CRAKZY BOT vivo"
+Thread(target=lambda: app.run(host='0.0.0.0',port=10000)).start()
+# ================================================================
 
 load_dotenv()
 
@@ -25,6 +35,7 @@ async def on_ready():
     await tree.sync()
     await client.change_presence(activity=discord.Game(name="/help | CRAKZY BOT"))
     print(f'✅ CRAKZY BOT en línea como {client.user}')
+    print(f'🚫 Bypass eliminado. 100% legal.')
 
 # ==================== COMANDOS DIVERTIDOS ====================
 @tree.command(name="ping", description="Muestra la latencia del bot")
@@ -194,10 +205,19 @@ async def play(interaction: discord.Interaction, busqueda: str):
         await interaction.followup.send("❌ No me pude conectar al canal de voz")
         return
 
-    ydl_opts = {'format': 'bestaudio', 'noplaylist': True, 'quiet': True}
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'noplaylist': True,
+        'quiet': True,
+        'default_search': 'ytsearch',
+        'source_address': '0.0.0.0'
+    }
+
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
-            info = ydl.extract_info(f"ytsearch:{busqueda}", download=False)['entries'][0]
+            info = ydl.extract_info(busqueda, download=False)
+            if 'entries' in info:
+                info = info['entries'][0]
         except:
             await interaction.followup.send("❌ No encontré esa canción")
             return
@@ -210,7 +230,7 @@ async def play(interaction: discord.Interaction, busqueda: str):
     voice_client.play(discord.FFmpegPCMAudio(url, **FFMPEG_OPTIONS))
 
     embed = discord.Embed(title="🎵 Reproduciendo ahora", description=f"[{titulo}]({info['webpage_url']})", color=0x2ecc71)
-    embed.set_thumbnail(url=info['thumbnail'])
+    embed.set_thumbnail(url=info.get('thumbnail'))
     embed.set_footer(text="CRAKZY BOT DJ")
     await interaction.followup.send(embed=embed)
 
@@ -225,7 +245,7 @@ async def stop(interaction: discord.Interaction):
 # ==================== HELP ====================
 @tree.command(name="help", description="Lista todos los comandos")
 async def help_command(interaction: discord.Interaction):
-    embed = discord.Embed(title="🤖 Comandos de CRAKZY BOT", description="Aquí tienes todo lo que puedo hacer:", color=0x7289da)
+    embed = discord.Embed(title="🤖 Comandos de CRAKZY BOT", description="Aquí tienes todo lo que puedo hacer:", color=0x7289db)
     embed.add_field(name="🎮 Diversión", value="`/8ball` `/rps` `/dado` `/meme` `/chiste`", inline=False)
     embed.add_field(name="🛠️ Útiles", value="`/traducir` `/clima` `/avatar` `/encuesta` `/recordatorio`", inline=False)
     embed.add_field(name="🎵 Música", value="`/play` `/stop` - Únete a un canal de voz primero", inline=False)
@@ -234,4 +254,8 @@ async def help_command(interaction: discord.Interaction):
     await interaction.response.send_message(embed=embed)
 
 # ==================== EJECUCIÓN ====================
-client.run(TOKEN)
+if __name__ == "__main__":
+    if TOKEN:
+        client.run(TOKEN)
+    else:
+        print("❌ Falta DISCORD_TOKEN en Environment Variables de Render")
